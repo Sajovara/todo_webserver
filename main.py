@@ -2,14 +2,30 @@ from flask import *
 import uuid
 
 allLists = []
+allEntries = []
 
 # initialisiere Flask-Server
 app = Flask(__name__)
 
+def findList(list_uuid):
+    for dictionary in allLists:
+        if(dictionary['uuid'] == list_uuid):
+            return dictionary
+        
+def findCorrespondingEntries(list_uuid):
+    
+
 # Route fürs Zurückgeben von Entries in einer Liste
 @app.route('/todo-list/<list_id>/entries', methods = ['GET'])
 def return_entries_of_list(list_id):
-    return 
+
+    foundEntries = []
+
+    for dictionary in allEntries:
+        if(dictionary['list_reference'] == list_id):
+            foundEntries.append(dictionary)
+            
+    return foundEntries
 
 # Route fürs Löschen von Todo-Listen
 @app.route('/todo-list/<list_id>', methods = ['DELETE'])
@@ -26,6 +42,7 @@ def create_list():
     dictionary = {
         'id' : list_uuid,
         'name' : list_name
+
     }
 
     allLists.append(dictionary)
