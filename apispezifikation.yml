@@ -1,0 +1,86 @@
+openapi: 3.0.3
+info:
+  title: To-Do-Listen Webserver
+  description: |- 
+    Die API ermöglicht das Anlegen und Verwalten von To-Do-Listen und Einträgen auf einem lokalen Webserver.
+  version: '1.0'
+servers:
+  - url: http://localhost:5000
+
+paths:
+  /todo-list/{list_id}:
+    get:
+      description: Liefert alle Einträge einer To-Do-Liste zurück.
+      responses:
+        200:
+          "$ref": "#/components/responses/arrayoftodolists"
+        404:
+          "$ref": "#/components/responses/errormessage"
+    delete:
+      description: Löscht eine vorhandene To-Do-Liste
+      responses:
+        200:
+          "$ref": "#/components/responses/200"
+       
+        
+components:
+  schemas:
+    listarrayschema:
+      type: object
+      properties:
+        lists:
+          type: array
+          items:
+            "$ref": "#/components/schemas/to-do-list-item"
+  
+    to-do-list-item:
+      type: object
+      properties:
+        name: 
+          type: string
+          description: The name of the item
+          example: "MeineTolleListe1"
+        id:
+          type: string
+          description: A unique UUID
+          example: "88b8ee7e-1390-4d96-87f6-d7863b50f490"
+    
+    to-do-entry-item:
+      type: object        
+
+  responses:
+    200:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: ""
+                example: Operation successful
+
+    arrayoftodolists:
+      description: OK
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/listarrayschema"
+
+    errormessage:
+      description: NOT FOUND
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: ""
+                example: UUID not found
+  
+    
+            
+           
+      
