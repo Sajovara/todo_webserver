@@ -235,24 +235,18 @@ components:
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              lists:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/to-do-list-item"
+            type: array
+            items:
+              "$ref": "#/components/schemas/to-do-list-item"
 
     arrayoftodoentries:
       description: OK
       content:
         application/json:
           schema:
-            type: object
-            properties:
-              entries:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/to-do-entry-item"
+            type: array
+            items:
+              "$ref": "#/components/schemas/to-do-entry-item"
 
     404message:
       description: NOT FOUND

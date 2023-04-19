@@ -7,42 +7,61 @@ allEntries = []
 # initialisiere Flask-Server
 app = Flask(__name__)
         
-# Route fürs Zurückgeben von Entries in einer Liste
-@app.route('/todo-list/<list_id>/entries', methods = ['GET'])
+# Route fürs Zurückgeben aller Entries in einer Liste oder fürs Löschen einer kompletten Liste
+@app.route('/todo-list/<list_id>', methods = ['GET', 'DELETE'])
 def return_entries_of_list(list_id):
 
-    foundEntries = []
-    for dictionary in allEntries:
-        if dictionary['list_reference'] == list_id:
-            foundEntries.append(dictionary)
-                
-    return jsonify(foundEntries)
-
-# Route fürs Löschen von Todo-Listen
-@app.route('/todo-list/<list_id>', methods = ['DELETE'])
-def delete_list(list_id):
-
-    deleted = False
-
+    list_exists = False
     for dictionary in allLists:
-        if(dictionary['id'] == list_id):
-            allLists.remove(dictionary)
-            deleted = True
+        if dictionary['id'] == list_id:
+            list_exists = True
+    
+    if not list_exists:
+        return Response("{\"message\": \"Error: List doesn't exist\"}", status=404, mimetype="application/json")
+
+    else:
+
+        if request.method == 'GET':
+
+            foundEntries = []
+            for dictionary in allEntries:
+                if dictionary['list_reference'] == list_id:
+                    foundEntries.append(dictionary)
+
+            return jsonify(foundEntries)
+        
+        elif request.method == 'DELETE':
+
+            deleted = False
+
+            for dictionary in allLists:
+                if(dictionary['id'] == list_id):
+                    allLists.remove(dictionary)
+                    deleted = True
             
-    return jsonify({'deleted' : deleted})
+            if deleted:
+                return jsonify({'deleted' : deleted})
+            
+            else:
+               return Response("{\"message\": \"Critical error while writing\"}", status=500, mimetype="application/json") 
 
 # Route fürs Erstellen von Todo-Listen
-@app.route('/todo-list', methods = ['PUT'])
+@app.route('/todo-list', methods = ['GET', 'PUT'])
 def create_list():
 
-    dictionary = {
-        'id' : str(uuid.uuid4()),
-        'name' : request.form.get('name')
-    }
+    if request.method == 'GET':
+        return jsonify(allLists)
+    
+    else:
 
-    allLists.append(dictionary)
+        dictionary = {
+            'id' : str(uuid.uuid4()),
+            'name' : request.form.get('name')
+        }
 
-    return jsonify(dictionary)
+        allLists.append(dictionary)
+
+        return jsonify(dictionary)
 
 # Route um einen Eintrag zu einer Todo-Liste hinzuzufügen
 @app.route('/entries', methods = ['POST'])
@@ -80,13 +99,6 @@ def update_or_delete_entry_in_list(list_id, entries_id):
                 allEntries.remove(dictionary)
                 deleted = True
         return jsonify({'deleted' : deleted})
-        
-
-# Route fürs zurückgeben aller Listen
-@app.route('/todo-list/search/', methods = ['GET'])
-def return_list_of_lists():
-
-    return jsonify(allLists)
 
 if __name__ == '__main__':
  app.run(host='0.0.0.0', port=5000, debug=True)

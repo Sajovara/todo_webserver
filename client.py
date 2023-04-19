@@ -37,7 +37,7 @@ def startUp():
 
 def listSelector(prompt):
     clearScreen()
-    listLister = r.get("http://127.0.0.1:5000/todo-list/search")
+    listLister = r.get("http://127.0.0.1:5000/todo-list")
 
     i = 0
 
@@ -238,5 +238,5 @@ while stillInMenu:
             list_selected = listSelector('display_entries')
 
             if list_selected is not False:
-                result = r.get("http://127.0.0.1:5000/todo-list/" + list_selected + "/entries")
+                result = r.get("http://127.0.0.1:5000/todo-list/" + list_selected)
                 printResult(result, 'display_entries')
