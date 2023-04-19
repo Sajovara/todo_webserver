@@ -7,38 +7,190 @@ info:
 servers:
   - url: http://localhost:5000
 
+tags:
+  - name: /todo-list/{list_id}
+    description: Ermöglicht das verwalten von gesamten To-Do-Listen
+  - name: /todo-list
+    description: Ermöglicht das Anzeigen aller und Erstellen neuer To-Do-Listen
+  - name: /todo-list/{list_id}/entry
+    description: Ermöglicht das Hinzufügen eines neuen Eintrags zu einer bestehenden Liste
+  - name: /entry/{entry_id}
+    description: Ermöglicht das Aktualisierun und löschen eines Eintrags 
+
 paths:
   /todo-list/{list_id}:
     get:
+      tags:
+        - /todo-list/{list_id}
       description: Liefert alle Einträge einer To-Do-Liste zurück.
       responses:
         200:
-          "$ref": "#/components/responses/arrayoftodolists"
+          "$ref": "#/components/responses/arrayoftodoentries"
         404:
-          "$ref": "#/components/responses/errormessage"
+          "$ref": "#/components/responses/404message"
+      parameters:
+        - "$ref": "#/components/parameters/listid"
     delete:
+      tags:
+      - /todo-list/{list_id}
       description: Löscht eine vorhandene To-Do-Liste
       responses:
         200:
           "$ref": "#/components/responses/200"
-       
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      parameters:
+        - "$ref": "#/components/parameters/listid"
+    patch:
+      tags:
+      - /todo-list/{list_id}
+      description: Aktualisiert den Namen einer bestehenden Todo-Liste
+      responses:
+        200:
+          "$ref": "#/components/responses/200"
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      parameters:
+        - "$ref": "#/components/parameters/listid"
+      requestBody: 
+        "$ref": "#/components/requestBodies/listbody"
+
+  /todo-list:
+    get:
+      tags:
+        - /todo-list
+      description: Liefert eine Liste aller Todo-Listen zurück
+      responses:
+        200:
+          "$ref": "#/components/responses/arrayoftodolists"
+        500:
+          "$ref": "#/components/responses/500message"
+      
+    
+    post:
+      tags:
+        - /todo-list
+      description: Legt eine neue Todo-Liste an
+      responses:
+        200:
+          "$ref": "#/components/responses/singletodolist"
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      requestBody: 
+        "$ref": "#/components/requestBodies/entrybody"
+    
+  /todo-list/{list_id}/entry:
+    post:
+      tags:
+        - /todo-list/{list_id}/entry
+      description: Fügt einen Eintrag zu einer bestehenden Todo-Liste hinzu.
+      responses:
+        200:
+          "$ref": "#/components/responses/200"
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      parameters:
+        - "$ref": "#/components/parameters/listid"
+      requestBody: 
+        "$ref": "#/components/requestBodies/entrybody"
+    
+  /entry/{entry_id}:
+    patch:
+      tags: 
+        - /entry/{entry_id}
+      description: Aktualisiert einen bestehenden Eintrag.
+      responses:
+        200:
+          "$ref": "#/components/responses/200"
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      parameters:
+        - "$ref": "#/components/parameters/entryid"
+      requestBody: 
+        "$ref": "#/components/requestBodies/entrybody"
+
+    delete:
+      tags: 
+        - /entry/{entry_id}
+      description: Löscht einen einzelnen Eintrag einer Todo-Liste.
+      responses:
+        200:
+          "$ref": "#/components/responses/200"
+        404:
+          "$ref": "#/components/responses/404message"
+        500:
+          "$ref": "#/components/responses/500message"
+      parameters:
+        - "$ref": "#/components/parameters/entryid"
         
 components:
+
+  parameters:
+    listid:
+      name: list_id
+      in: path
+      schema:
+        "$ref": "#/components/schemas/uuid"
+      required: true
+      
+    entryid:
+      name: entry_id
+      in: path
+      schema:
+        "$ref": "#/components/schemas/uuid"
+      required: true
+
+  requestBodies:
+    listbody:
+      description: Enthält den Namen der Liste.
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              name:
+                "$ref": "#/components/schemas/name"
+                required: true
+      
+    entrybody:
+      description: Enthält den Namen des Eintrags.
+      content:
+        application/json:
+          schema: 
+            type: object
+            properties:
+              name:
+                "$ref": "#/components/schemas/name"
+                required: true
+
   schemas:
-    listarrayschema:
-      type: object
-      properties:
-        lists:
-          type: array
-          items:
-            "$ref": "#/components/schemas/to-do-list-item"
-  
+
+    uuid:
+      type: string
+      description: Eine eindeutige Nummer zum Identifizieren eines Items
+      example: d665842a-482f-4a7c-b9a2-65b649be7543
+
+    name:
+      type: string
+      description: Name eines Items
+      example: TollerName1
+
     to-do-list-item:
       type: object
       properties:
         name: 
           type: string
-          description: The name of the item
+          description: The name of the list
           example: "MeineTolleListe1"
         id:
           type: string
@@ -46,7 +198,24 @@ components:
           example: "88b8ee7e-1390-4d96-87f6-d7863b50f490"
     
     to-do-entry-item:
-      type: object        
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the entry
+          example: "MeinTollerEintrag1"
+        description:
+          type: string
+          description: "The description of the entry"
+          example: "Dicke Wassermelonen"
+        id:
+          type: string
+          description: A unique UUID
+          example: "861aaf49-8022-4337-852f-5137eb35a79a"
+        list_id:
+          type: string
+          description: A UUID of a list to reference to it
+          example: "88b8ee7e-1390-4d96-87f6-d7863b50f490"
 
   responses:
     200:
@@ -66,9 +235,26 @@ components:
       content:
         application/json:
           schema:
-            "$ref": "#/components/schemas/listarrayschema"
+            type: object
+            properties:
+              lists:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/to-do-list-item"
 
-    errormessage:
+    arrayoftodoentries:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              entries:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/to-do-entry-item"
+
+    404message:
       description: NOT FOUND
       content:
         application/json:
@@ -79,8 +265,22 @@ components:
                 type: string
                 description: ""
                 example: UUID not found
-  
-    
-            
-           
-      
+
+    500message:
+      description: ERROR WHILE WRITING
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: ""
+                example: Crticial error while writing
+
+    singletodolist:
+      description: OK
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/to-do-list-item"
