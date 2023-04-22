@@ -28,6 +28,8 @@ paths:
           "$ref": "#/components/responses/arrayoftodoentries"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
       parameters:
         - "$ref": "#/components/parameters/listid"
     delete:
@@ -39,6 +41,8 @@ paths:
           "$ref": "#/components/responses/200"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       parameters:
@@ -49,9 +53,11 @@ paths:
       description: Aktualisiert den Namen einer bestehenden Todo-Liste
       responses:
         200:
-          "$ref": "#/components/responses/200"
+          "$ref": "#/components/responses/singletodolist"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       parameters:
@@ -67,6 +73,8 @@ paths:
       responses:
         200:
           "$ref": "#/components/responses/arrayoftodolists"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       
@@ -78,8 +86,12 @@ paths:
       responses:
         200:
           "$ref": "#/components/responses/singletodolist"
+        403:
+          "$ref": "#/components/responses/403message"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       requestBody: 
@@ -92,9 +104,11 @@ paths:
       description: Fügt einen Eintrag zu einer bestehenden Todo-Liste hinzu.
       responses:
         200:
-          "$ref": "#/components/responses/200"
+          "$ref": "#/components/responses/singletodoentry"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       parameters:
@@ -112,6 +126,8 @@ paths:
           "$ref": "#/components/responses/200"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       parameters:
@@ -125,9 +141,11 @@ paths:
       description: Löscht einen einzelnen Eintrag einer Todo-Liste.
       responses:
         200:
-          "$ref": "#/components/responses/200"
+          "$ref": "#/components/responses/deletedentry"
         404:
           "$ref": "#/components/responses/404message"
+        405:
+          "$ref": "#/components/responses/405message"
         500:
           "$ref": "#/components/responses/500message"
       parameters:
@@ -188,14 +206,14 @@ components:
     to-do-list-item:
       type: object
       properties:
-        name: 
-          type: string
-          description: The name of the list
-          example: "MeineTolleListe1"
         id:
           type: string
           description: A unique UUID
           example: "88b8ee7e-1390-4d96-87f6-d7863b50f490"
+        name: 
+          type: string
+          description: The name of the list
+          example: "MeineTolleListe1"
     
     to-do-entry-item:
       type: object
@@ -248,6 +266,17 @@ components:
             items:
               "$ref": "#/components/schemas/to-do-entry-item"
 
+    403message:
+      description: NO NAME SPECIFIED
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                description: ""
+                example: No name was specified
     404message:
       description: NOT FOUND
       content:
@@ -259,6 +288,9 @@ components:
                 type: string
                 description: ""
                 example: UUID not found
+    
+    405message:
+      description: Method not allowed
 
     500message:
       description: ERROR WHILE WRITING
@@ -278,3 +310,22 @@ components:
         application/json:
           schema:
             "$ref": "#/components/schemas/to-do-list-item"
+
+    singletodoentry:
+      description: OK
+      content:
+        application/json:
+          schema:
+            "$ref": "#/components/schemas/to-do-entry-item"
+
+    deletedentry:
+      description: OK
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              deleted:
+                type: string
+                description: ""
+                example: "True"

@@ -7,9 +7,9 @@ allEntries = []
 # initialisiere Flask-Server
 app = Flask(__name__)
         
-# Route fürs Zurückgeben aller Entries in einer Liste oder fürs Löschen einer kompletten Liste
-@app.route('/todo-list/<list_id>', methods = ['GET', 'DELETE'])
-def return_entries_of_list(list_id):
+# Route fürs Zurückgeben aller Entries in einer Liste oder fürs Löschen einer kompletten Liste oder für das Aktualisieren des Namens einer Liste
+@app.route('/todo-list/<list_id>', methods = ['GET', 'DELETE', 'PATCH'])
+def return_entries_of_list_or_rename_list_or_delete_list(list_id):
 
     list_exists = False
     for dictionary in allLists:
@@ -17,7 +17,7 @@ def return_entries_of_list(list_id):
             list_exists = True
     
     if not list_exists:
-        return Response("{\"message\": \"Error: List doesn't exist\"}", status=404, mimetype="application/json")
+        return Response("{\"message\": \"Error: UUID not found\"}", status=404, mimetype="application/json")
 
     else:
 
@@ -32,73 +32,104 @@ def return_entries_of_list(list_id):
         
         elif request.method == 'DELETE':
 
-            deleted = False
-
             for dictionary in allLists:
                 if(dictionary['id'] == list_id):
                     allLists.remove(dictionary)
-                    deleted = True
-            
-            if deleted:
-                return jsonify({'deleted' : deleted})
-            
-            else:
-               return Response("{\"message\": \"Critical error while writing\"}", status=500, mimetype="application/json") 
 
-# Route fürs Erstellen von Todo-Listen
-@app.route('/todo-list', methods = ['GET', 'PUT'])
+            return Response("{\"message\": \"Operation successful\"}", status=200, mimetype="application/json")
+            
+        elif request.method == 'PATCH':
+
+            for dictionary in allLists:
+                if(dictionary['id'] == list_id):
+                    dictionary['name'] = request.form.get('name')
+                    return jsonify(dictionary)
+                
+        return Response("{\"message\": \"Critical error while writing\"}", status=500, mimetype="application/json") 
+
+# Route fürs Erstellen von Todo-Listen oder zum Zurückgeben aller Todo-Listen
+@app.route('/todo-list', methods = ['GET', 'POST'])
 def create_list():
 
     if request.method == 'GET':
         return jsonify(allLists)
     
-    else:
+    elif request.method == 'POST':
 
+        if not request.form.get('name'):
+            
+            return Response("{\"message\": \"No name was specified\"}", status=403, mimetype="application/json")
+
+        else:
+
+            dictionary = {
+                'id' : str(uuid.uuid4()),
+                'name' : request.form.get('name')
+            }
+
+            allLists.append(dictionary)
+
+            return jsonify(dictionary)
+
+# Route um einen Eintrag zu einer Todo-Liste hinzuzufügen
+@app.route('/todo-list/<list_id>/entry', methods = ['POST'])
+def add_entry_to_list(list_id):
+
+    list_exists = False
+    for dictionary in allLists:
+        if dictionary['id'] == list_id:
+            list_exists = True
+
+    if not list_exists:
+        return Response("{\"message\": \"Error: UUID not found\"}", status=404, mimetype="application/json")
+    
+    else:
+    
         dictionary = {
+            'list_reference' : list_id,
             'id' : str(uuid.uuid4()),
-            'name' : request.form.get('name')
+            'name' : request.form.get('name'),
+            'desc' : request.form.get('desc')
         }
 
-        allLists.append(dictionary)
+        allEntries.append(dictionary)
 
         return jsonify(dictionary)
 
-# Route um einen Eintrag zu einer Todo-Liste hinzuzufügen
-@app.route('/entries', methods = ['POST'])
-def add_entry_to_list():
-    
-    dictionary = {
-        'list_reference' : request.form.get('list_reference'),
-        'id' : str(uuid.uuid4()),
-        'name' : request.form.get('name'),
-        'desc' : request.form.get('desc')
-    }
-
-    allEntries.append(dictionary)
-
-    return jsonify(dictionary)
-
 # Route um einen bestehenden Eintrag zu aktualisieren oder zu löschen
-@app.route('/entries/<list_id>/<entries_id>', methods = ['POST', 'DELETE'])
-def update_or_delete_entry_in_list(list_id, entries_id):
+@app.route('/entry/<entry_id>', methods = ['PATCH', 'DELETE'])
+def update_or_delete_entry_in_list(entry_id):
 
-    if request.method == 'POST':
-        for dictionary in allEntries:
-            if dictionary['list_reference'] == list_id and dictionary['id'] == entries_id:
-                if request.form.get('type') == 'name':
-                    dictionary['name'] = request.form.get('name')
-                elif request.form.get('type') == 'desc':
-                    dictionary['desc'] = request.form.get('desc')
-                elif request.form.get('type') == 'list_reference':
-                    dictionary['list_reference'] = request.form.get('list_reference')
-            return jsonify(dictionary)
+    entry_exists = False
+    for dictionary in allEntries:
+        if dictionary['id'] == entry_id:
+            entry_exists = True
+
+    if not entry_exists:
+        return Response("{\"message\": \"Error: UUID not found\"}", status=404, mimetype="application/json")
+    
     else:
-        deleted = False
-        for dictionary in allEntries:
-            if dictionary['list_reference'] == list_id and dictionary['id'] == entries_id:
-                allEntries.remove(dictionary)
-                deleted = True
-        return jsonify({'deleted' : deleted})
+
+        if request.method == 'PATCH':
+            for dictionary in allEntries:
+                if dictionary['id'] == entry_id:
+                    if request.form.get('name'):
+                        dictionary['name'] = request.form.get('name')
+                    if request.form.get('desc'):
+                        dictionary['desc'] = request.form.get('desc')
+
+                    return jsonify(dictionary)
+            
+        elif request.method == 'DELETE':
+            deleted = False
+            for dictionary in allEntries:
+                if dictionary['id'] == entry_id:
+                    allEntries.remove(dictionary)
+                    deleted = True
+            
+            return jsonify({'deleted' : deleted})
+        
+        return Response("{\"message\": \"Critical error while writing\"}", status=500, mimetype="application/json")
 
 if __name__ == '__main__':
  app.run(host='0.0.0.0', port=5000, debug=True)

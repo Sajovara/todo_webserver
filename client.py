@@ -13,22 +13,21 @@ def startUp():
     print()
     print("1. Eine neue Liste erstellen")
     print("2. Eine Liste löschen")
-    print("3. Einen Eintrag erstellen")
-    print("4. Den Namen eines Eintrags aktualisieren")
-    print("5. Die Beschreibung eines Eintrags aktualisieren")
-    print("6. Einen Eintrag einer anderen Listen zuordnen")
-    print("7. Einen Eintrag löschen")
-    print("8. Alle Einträge einer Liste anzeigen")
-    print("9. Gar nichts")
+    print("3. Eine Liste umbenennen")
+    print("4. Einen Eintrag erstellen")
+    print("5. Einen Eintrag aktualisieren")
+    print("6. Einen Eintrag löschen")
+    print("7. Alle Einträge einer Liste anzeigen")
+    print("8. Gar nichts")
     print()
 
     choice = 0
 
     while True:
-        if (choice == "" or not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) >= 10):
-            choice = input("Bitte gib eine Zahl ein (1-9): ")
+        if (choice == "" or not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) >= 9):
+            choice = input("Bitte gib eine Zahl ein (1-8): ")
         else:
-            if(int(choice) == 9):
+            if(int(choice) == 8):
                 global stillInMenu
                 stillInMenu = False
             break
@@ -57,17 +56,17 @@ def listSelector(prompt):
         choice = 0
 
         while True:
-            if (choice == "" or not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) >= 4) or (int(choice) > len(listLister.json())):
+            if (not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) > len(listLister.json())):
                 
                 match prompt:
                     
                     case 'delete': choice = input("Welche Liste möchtest du löschen? (1-"+str(i)+"): ")
 
+                    case 'update': choice = input("Welche Liste möchtest du umbennen? (1-"+str(i)+"): ")
+
                     case 'create_entry': choice = input("Zu welcher Liste möchtest du einen Eintrag hinzufügen? (1-"+str(i)+"): ")
 
                     case 'update_entry': choice = input("In welcher Liste möchtest du einen Eintrag aktualisieren? (1-"+str(i)+"): ")
-
-                    case 'update_entry_list': choice = input("Welcher Liste möchtest du den Eintrag zuordnen? (1-"+str(i)+"): ")
 
                     case 'delete_entry': choice = input("Aus welcher Liste möchtest du einen Eintrag löschen? (1-"+str(i)+"): ")
 
@@ -81,7 +80,7 @@ def listSelector(prompt):
 def entrySelector(prompt, list_id):
     if list_id is not False:
         clearScreen()
-        entryLister = r.get("http://127.0.0.1:5000/todo-list/"+str(list_id)+"/entries")
+        entryLister = r.get("http://127.0.0.1:5000/todo-list/"+str(list_id))
 
         i = 0
 
@@ -101,7 +100,7 @@ def entrySelector(prompt, list_id):
             choice = 0
 
             while True:
-                if (choice == "" or not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) >= 4) or (int(choice) > len(entryLister.json())):
+                if (not str(choice).isdigit()) or (int(choice) <= 0 or int(choice) > len(entryLister.json())):
                     
                     match prompt:
                         
@@ -127,10 +126,13 @@ def printResult(result, prompt):
             print("Name: " + result.json()['name'])
         
         case 'delete_list':
-            if result.json()['deleted']:
-                print("Die Liste wurde erfolgreich gelöscht")
-            else:
-                print("Löschen nicht erfolgreich")
+            print("Die Liste wurde erfolgreich gelöscht")
+        
+        case 'update_list':
+            print("Die Liste sieht nun wie folgt aus: ")
+            print()
+            print("ID: " + result.json()['id'])
+            print("Name: " + result.json()['name'])
 
         case 'create_entry':
             print("Der folgende Eintrag wurde hinzugefügt:")
@@ -177,64 +179,65 @@ while stillInMenu:
     match startUp():
 
         case 1:
-            clearScreen()  
+            clearScreen()
             name = input("Wie soll die neue To-Do Liste heißen? ")
-            while len(name) <= 0:
-                name = input("Wie soll die neue To-Do Liste heißen? ")
-            result = r.put("http://127.0.0.1:5000/todo-list", data={'name' : name})
-            printResult(result, 'create_list')
-        
+            result = r.post("http://127.0.0.1:5000/todo-list", data={'name' : name})
+            if(result.status_code == 200):
+                printResult(result, 'create_list')
+            else:
+                print("Fehler beim Schreiben. Wurde kein Name angegeben?")
+                print()
+                input("Bitte Enter drücken...")        
         case 2:
             list_selected =  listSelector('delete')
 
             if list_selected is not False:
                 result = r.delete("http://127.0.0.1:5000/todo-list/" + list_selected)
-                printResult(result, 'delete_list')
+                if(result.status_code == 200):
+                    printResult(result, 'delete_list')
+                else:
+                    print("Fehler beim Löschen.")
+                    print()
+                    input("Bitte Enter drücken...")
 
         case 3:
+            list_selected = listSelector('update')
+
+            if list_selected is not False:
+                name = input("Wie soll die To-Do Liste heißen? ")
+                result = r.patch("http://127.0.0.1:5000/todo-list/" + list_selected, data={'name' : name})
+                if(result.status_code == 200):
+                    printResult(result, 'update_list')
+                else:
+                    print("Fehler beim Schreiben. Wurde kein Name angegeben?")
+                    print()
+                    input("Bitte Enter drücken...")  
+
+        case 4:
             list_selected = listSelector('create_entry')
             if list_selected is not False:
                 name = input("Wie soll der neue Eintrag heißen? ")
                 description = input("Wie soll die Beschreibung lauten? (darf leer sein): ")
-                result = r.post("http://127.0.0.1:5000/entries", data={'name' : name, 'list_reference' : list_selected, 'desc' : description})
+                result = r.post("http://127.0.0.1:5000/todo-list/" + list_selected + "/entry", data={'name' : name, 'desc' : description})
                 printResult(result, 'create_entry')
 
-        case 4:
-            list_selected = listSelector('update_entry')
-            entry_selected = entrySelector('update_entry', list_selected)
-
-            if entry_selected is not False:
-                name = input("Bitte gib den neuen Namen des Eintrags ein: ")
-                result = r.post("http://127.0.0.1:5000/entries/" + list_selected + "/" + entry_selected, data={'name' : name, 'type' : 'name'})
-                printResult(result, 'update_entry')
-
         case 5:
-            list_selected = listSelector('update_entry')
-            entry_selected = entrySelector('update_entry', list_selected)
+            entry_selected = entrySelector('update_entry', listSelector('update_entry'))
 
             if entry_selected is not False:
-                description = input("Bitte gib die neue Beschreibung des Eintrags ein: ")
-                result = r.post("http://127.0.0.1:5000/entries/" + list_selected + "/" + entry_selected, data={'desc' : description, 'type' : 'desc'})
+                name = input("Bitte gib den neuen Namen des Eintrags ein (leer -> alter Name wird beibehalten): ")
+                description = input("Bitte gib die neue Beschreibung des Eintrags ein (leer -> alte Beschreibung wird beibehalten): ")
+                result = r.patch("http://127.0.0.1:5000/entry/" + entry_selected, data={'name' : name, 'desc' : description})
                 printResult(result, 'update_entry')
 
         case 6:
-            list_selected = listSelector('update_entry')
-            entry_selected = entrySelector('update_entry', list_selected)
-
-            if entry_selected is not False:
-                list_reference = listSelector('update_entry_list')
-                result = r.post("http://127.0.0.1:5000/entries/" + list_selected + "/" + entry_selected, data={'list_reference' : list_reference, 'type' : 'list_reference'})
-                printResult(result, 'update_entry')
-
-        case 7:
-            list_selected = listSelector('delete_entry')
-            entry_selected = entrySelector('delete_entry', list_selected)
+            entry_selected = entrySelector('delete_entry', listSelector('delete_entry'))
             
-            if list_selected is not False and entry_selected is not False:
-                result = r.delete("http://127.0.0.1:5000/entries/" + list_selected + "/" + entry_selected)
+            if entry_selected is not False:
+                result = r.delete("http://127.0.0.1:5000/entry/" + entry_selected)
                 printResult(result, 'delete_entry')
 
-        case 8:
+        case 7:
             list_selected = listSelector('display_entries')
 
             if list_selected is not False:
